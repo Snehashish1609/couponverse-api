@@ -9,6 +9,9 @@ RESTful API to manage and apply different types of discount coupons (cart-wise, 
 ### ToDos
 
 - refactor how db operations occur, use interfaces
+- use interface for coupon type?
+- unit tests
+- better database schema?
 - better way to handle details per coupon type
 - more logs (debug, info, and error)
 - clean-up testing code
