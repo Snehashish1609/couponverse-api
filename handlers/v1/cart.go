@@ -64,8 +64,9 @@ func (ch *CouponsHandler) GetApplicableCoupons(w http.ResponseWriter, r *http.Re
 
 func calculateCartWiseDiscount(coupon models.Coupon, cart models.Cart) float64 {
 	var details struct { // TODO: better way to handle details per coupon type
-		Threshold float64 `json:"threshold"`
-		Discount  float64 `json:"discount"`
+		Threshold float64  `json:"threshold"`
+		Discount  float64  `json:"discount"`
+		Cap       *float64 `json:"cap"`
 	}
 	json.Unmarshal([]byte(coupon.Details), &details)
 
@@ -75,6 +76,9 @@ func calculateCartWiseDiscount(coupon models.Coupon, cart models.Cart) float64 {
 	}
 
 	if totalCartValue > details.Threshold {
+		if details.Cap != nil {
+			return min(totalCartValue*(details.Discount/100), *details.Cap)
+		}
 		return totalCartValue * (details.Discount / 100)
 	}
 
@@ -83,8 +87,9 @@ func calculateCartWiseDiscount(coupon models.Coupon, cart models.Cart) float64 {
 
 func calculateProductWiseDiscount(coupon models.Coupon, cart models.Cart) float64 {
 	var details struct {
-		ProductID int     `json:"product_id"`
-		Discount  float64 `json:"discount"`
+		ProductID int      `json:"product_id"`
+		Discount  float64  `json:"discount"`
+		Cap       *float64 `json:"cap"`
 	}
 	json.Unmarshal([]byte(coupon.Details), &details)
 
@@ -94,6 +99,9 @@ func calculateProductWiseDiscount(coupon models.Coupon, cart models.Cart) float6
 			productDiscount := float64(item.Quantity) * item.Price * (details.Discount / 100)
 			totalDiscount += productDiscount
 		}
+	}
+	if details.Cap != nil {
+		return min(totalDiscount, *details.Cap)
 	}
 	return totalDiscount
 }
