@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -17,9 +16,6 @@ func GetApplicableCoupons(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("GetApplicableCoupons called")
 
-	// body, _ := ioutil.ReadAll(r.Body)
-	// fmt.Println("Body:", string(body))
-
 	var request common.ApplicableCouponsRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		log.Error().Msgf("Invalid cart payload: %s", err.Error())
@@ -32,34 +28,25 @@ func GetApplicableCoupons(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	fmt.Println("Cart:", request.Cart)
-
 	var coupons []models.Coupon
 	if err := db.DB.Find(&coupons).Error; err != nil {
 		http.Error(w, "Could not retrieve coupons", http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Println("got coupons:", coupons)
-
 	applicableCoupons := []common.ApplicableCouponResponse{}
 
 	for _, coupon := range coupons {
-		fmt.Println(coupon.Type)
 		var discount float64
 		switch coupon.Type {
 		case models.CartWise:
-			fmt.Println("calculateCartWiseDiscount")
 			discount = calculateCartWiseDiscount(coupon, request.Cart)
 		case models.ProductWise:
-			fmt.Println("calculateProductWiseDiscount")
 			discount = calculateProductWiseDiscount(coupon, request.Cart)
 		case models.BxGy:
-			fmt.Println("calculateBxGyDiscount")
 			discount = calculateBxGyDiscount(coupon, request.Cart)
 		}
 
-		fmt.Println("discount:", discount)
 		if discount > 0 {
 			applicableCoupons = append(applicableCoupons, common.ApplicableCouponResponse{
 				CouponID: coupon.ID,
@@ -81,14 +68,10 @@ func calculateCartWiseDiscount(coupon models.Coupon, cart models.Cart) float64 {
 	}
 	json.Unmarshal([]byte(coupon.Details), &details)
 
-	fmt.Println(details)
-
 	totalCartValue := 0.0
 	for _, item := range cart.Items {
 		totalCartValue += float64(item.Quantity) * item.Price
 	}
-
-	fmt.Println("total cart value:", totalCartValue)
 
 	if totalCartValue > details.Threshold {
 		return totalCartValue * (details.Discount / 100)
@@ -103,7 +86,6 @@ func calculateProductWiseDiscount(coupon models.Coupon, cart models.Cart) float6
 		Discount  float64 `json:"discount"`
 	}
 	json.Unmarshal([]byte(coupon.Details), &details)
-	fmt.Println(details)
 
 	totalDiscount := 0.0
 	for _, item := range cart.Items {
