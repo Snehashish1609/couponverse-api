@@ -105,13 +105,14 @@ func calculateProductWiseDiscount(coupon models.Coupon, cart models.Cart) float6
 	json.Unmarshal([]byte(coupon.Details), &details)
 	fmt.Println(details)
 
+	totalDiscount := 0.0
 	for _, item := range cart.Items {
 		if item.ProductID == details.ProductID {
-			return float64(item.Quantity) * item.Price * (details.Discount / 100)
+			productDiscount := float64(item.Quantity) * item.Price * (details.Discount / 100)
+			totalDiscount += productDiscount
 		}
 	}
-
-	return 0
+	return totalDiscount
 }
 
 func calculateBxGyDiscount(coupon models.Coupon, cart models.Cart) float64 {
@@ -127,9 +128,9 @@ func calculateBxGyDiscount(coupon models.Coupon, cart models.Cart) float64 {
 		RepetitionLimit int `json:"repition_limit"`
 	}
 	json.Unmarshal([]byte(coupon.Details), &details)
-	fmt.Println(details)
 
-	buyCounts := map[int]int{}
+	// map product and quantity eligible for coupon
+	buyCounts := make(map[int]int)
 	for _, item := range cart.Items {
 		for _, buy := range details.BuyProducts {
 			if item.ProductID == buy.ProductID {
@@ -138,30 +139,41 @@ func calculateBxGyDiscount(coupon models.Coupon, cart models.Cart) float64 {
 		}
 	}
 
-	// get the maximum times the offer can be applied
-	minReps := details.RepetitionLimit
-	for _, buy := range details.BuyProducts {
-		reps := buyCounts[buy.ProductID] / buy.Quantity
-		if reps < minReps {
-			minReps = reps
-		}
-	}
-
-	if minReps == 0 {
-		return 0
-	}
-
-	// get the discount for the "Get" products
-	totalDiscount := 0.0
-	for _, get := range details.GetProducts {
-		for _, item := range cart.Items {
-			if item.ProductID == get.ProductID {
-				totalDiscount += float64(minReps*get.Quantity) * item.Price
+	appliedCouponCount := 0
+	productExhausted := false
+	// find eligible free items from cart
+	freeItemMap := make(map[int]int)
+	for appliedCouponCount < details.RepetitionLimit && !productExhausted {
+		eligibleForFreeItem := false // set base condition
+		for _, buyProd := range details.BuyProducts {
+			if buyCounts[buyProd.ProductID] >= buyProd.Quantity {
+				eligibleForFreeItem = true
+				continue // keep checking for match
+			} else {
+				productExhausted = true     // not enough product quantities to apply coupon
+				eligibleForFreeItem = false // reset if match not found
 			}
 		}
+		if eligibleForFreeItem {
+			for _, buyProd := range details.BuyProducts {
+				buyCounts[buyProd.ProductID] -= buyProd.Quantity
+			}
+			for _, getProd := range details.GetProducts {
+				freeItemMap[getProd.ProductID] += getProd.Quantity
+			}
+			appliedCouponCount++
+		}
 	}
 
-	return totalDiscount
+	// calculate free items cost
+	discount := 0.0
+	for _, item := range cart.Items {
+		if freeItemMap[item.ProductID] > 0 {
+			discount = item.Price * float64(freeItemMap[item.ProductID])
+		}
+	}
+
+	return discount
 }
 
 func ApplyCoupon(w http.ResponseWriter, r *http.Request) {
