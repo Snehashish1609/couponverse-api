@@ -4,7 +4,9 @@ RESTful API to manage and apply different types of discount coupons (cart-wise, 
 
 ### Run local
 
-`go run cmd/main.go`
+- Setup Postgresql database
+- Create a `.env` file with Application config details like host, port, dbname, etc. [use `example.env` for reference]
+- `go run cmd/main.go`
 
 
 ## Implementation
@@ -83,5 +85,6 @@ To do: dynamic discount calculation per coupon type (more in point 3, Improvemen
 
 - use interface for coupon type?
 - unit tests
+- dockerfile, docker-compose, etc.
 - better database schema?
 - better way to handle details per coupon type?
