@@ -5,6 +5,8 @@ import (
 
 	"github.com/Snehashish1609/couponverse-api/config"
 	"github.com/Snehashish1609/couponverse-api/db"
+	"github.com/Snehashish1609/couponverse-api/db/coupon"
+	v1 "github.com/Snehashish1609/couponverse-api/handlers/v1"
 	"github.com/Snehashish1609/couponverse-api/router"
 	"github.com/Snehashish1609/couponverse-api/server"
 	"github.com/rs/zerolog/log"
@@ -33,9 +35,11 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error connecting to DB")
 	}
-	db.DB = gdb
 
-	r, err := router.CreateRouter()
+	CouponClient := coupon.NewClient(gdb)
+	CouponHandler := v1.NewCouponsHandler(CouponClient)
+
+	r, err := router.CreateRouter(CouponHandler)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error creating router")
 	}

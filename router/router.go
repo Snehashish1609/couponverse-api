@@ -5,20 +5,20 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CreateRouter() (*mux.Router, error) {
+func CreateRouter(ch *v1.CouponsHandler) (*mux.Router, error) {
 	r := mux.NewRouter()
 
 	// routes
-	r.HandleFunc("/", v1.HomeHandler)
-	r.HandleFunc("/api/v1/user/{user_id}", v1.GetUserHandler).Methods("GET")
-	r.HandleFunc("/coupons", v1.CreateCoupon).Methods("POST")
-	r.HandleFunc("/coupons/{id}", v1.GetCoupon).Methods("GET")
-	r.HandleFunc("/coupons", v1.GetAllCoupons).Methods("GET")
-	r.HandleFunc("/coupons/{id}", v1.UpdateCoupon).Methods("PUT")
-	r.HandleFunc("/coupons/{id}", v1.DeleteCoupon).Methods("DELETE")
+	r.HandleFunc("/", ch.HomeHandler)
+	r.HandleFunc("/api/v1/user/{user_id}", ch.GetUserHandler).Methods("GET")
+	r.HandleFunc("/coupons", ch.CreateCoupon).Methods("POST")
+	r.HandleFunc("/coupons/{id}", ch.GetCoupon).Methods("GET")
+	r.HandleFunc("/coupons", ch.GetAllCoupons).Methods("GET")
+	r.HandleFunc("/coupons/{id}", ch.UpdateCoupon).Methods("PUT")
+	r.HandleFunc("/coupons/{id}", ch.DeleteCoupon).Methods("DELETE")
 
-	r.HandleFunc("/applicable-coupons", v1.GetApplicableCoupons).Methods("POST")
-	r.HandleFunc("/apply-coupon/{id}", v1.ApplyCoupon).Methods("POST")
+	r.HandleFunc("/applicable-coupons", ch.GetApplicableCoupons).Methods("POST")
+	r.HandleFunc("/apply-coupon/{id}", ch.ApplyCoupon).Methods("POST")
 
 	return r, nil
 }

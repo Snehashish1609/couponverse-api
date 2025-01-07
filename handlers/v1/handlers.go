@@ -5,12 +5,23 @@ import (
 	"strconv"
 
 	"github.com/Snehashish1609/couponverse-api/common"
+	"github.com/Snehashish1609/couponverse-api/db/coupon"
 	"github.com/Snehashish1609/couponverse-api/models"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
 
-func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+type CouponsHandler struct {
+	DBClient coupon.Client
+}
+
+func NewCouponsHandler(client coupon.Client) *CouponsHandler {
+	return &CouponsHandler{
+		DBClient: client,
+	}
+}
+
+func (ch *CouponsHandler) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("GetUserHandler called")
 
@@ -21,7 +32,7 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	common.WriteResponse(response, w, http.StatusOK)
 }
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
+func (ch *CouponsHandler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("handling home")
 

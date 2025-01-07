@@ -6,34 +6,34 @@ import (
 	"strconv"
 
 	"github.com/Snehashish1609/couponverse-api/common"
-	"github.com/Snehashish1609/couponverse-api/db"
 	"github.com/Snehashish1609/couponverse-api/models"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
 
-func GetAllCoupons(w http.ResponseWriter, r *http.Request) {
+func (ch *CouponsHandler) GetAllCoupons(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("GetAllCoupons called")
 
-	var coupons []models.Coupon
-	result := db.DB.Find(&coupons)
-	if result.Error != nil {
-		log.Error().Msgf("%s", result.Error.Error())
-		response := common.DataResponse{Message: result.Error.Error()}
+	allCoupons, err := ch.DBClient.GetAllCoupons()
+	if err != nil {
+		log.Error().Msgf("Could not get all coupons: %s", err.Error())
+		response := common.DataResponse{
+			Message: err.Error(),
+		}
 
 		common.WriteResponse(response, w, http.StatusInternalServerError)
 		return
 	}
 
-	common.WriteResponse(coupons, w, http.StatusOK)
+	common.WriteResponse(allCoupons, w, http.StatusOK)
 }
 
-func CreateCoupon(w http.ResponseWriter, r *http.Request) {
+func (ch *CouponsHandler) CreateCoupon(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("CreateCoupon called")
 
-	var coupon models.Coupon
+	var coupon *models.Coupon
 	if err := json.NewDecoder(r.Body).Decode(&coupon); err != nil {
 		log.Error().Msgf("Invalid coupon payload: %s", err.Error())
 		response := common.DataResponse{
@@ -44,10 +44,10 @@ func CreateCoupon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := db.DB.Create(&coupon)
-	if result.Error != nil {
-		log.Error().Msgf("%s", result.Error.Error())
-		response := common.DataResponse{Message: result.Error.Error()}
+	err := ch.DBClient.CreateCoupon(coupon)
+	if err != nil {
+		log.Error().Msgf("Could not create coupon: %s", err.Error())
+		response := common.DataResponse{Message: err.Error()}
 
 		common.WriteResponse(response, w, http.StatusInternalServerError)
 		return
@@ -61,7 +61,7 @@ func CreateCoupon(w http.ResponseWriter, r *http.Request) {
 	common.WriteResponse(response, w, http.StatusCreated)
 }
 
-func GetCoupon(w http.ResponseWriter, r *http.Request) {
+func (ch *CouponsHandler) GetCoupon(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("GetCoupon called")
 
@@ -77,12 +77,10 @@ func GetCoupon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var coupon models.Coupon
-
-	result := db.DB.First(&coupon, couponId)
-	if result.Error != nil {
-		log.Error().Msgf("%s", result.Error.Error())
-		response := common.DataResponse{Message: result.Error.Error()}
+	coupon, err := ch.DBClient.GetCouponById(couponId)
+	if err != nil {
+		log.Error().Msgf("%s", err.Error())
+		response := common.DataResponse{Message: err.Error()}
 
 		common.WriteResponse(response, w, http.StatusNotFound)
 		return
@@ -96,11 +94,11 @@ func GetCoupon(w http.ResponseWriter, r *http.Request) {
 	common.WriteResponse(response, w, http.StatusOK)
 }
 
-func UpdateCoupon(w http.ResponseWriter, r *http.Request) {
+func (ch *CouponsHandler) UpdateCoupon(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("UpdateCoupon called")
 
-	var coupon, updatedCoupon models.Coupon
+	var updatedCoupon *models.Coupon
 	vars := mux.Vars(r)
 	couponID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -113,10 +111,10 @@ func UpdateCoupon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := db.DB.First(&coupon, couponID)
-	if result.Error != nil {
-		log.Error().Msgf("%s", result.Error.Error())
-		response := common.DataResponse{Message: result.Error.Error()}
+	coupon, err := ch.DBClient.GetCouponById(couponID)
+	if err != nil {
+		log.Error().Msgf("%s", err.Error())
+		response := common.DataResponse{Message: err.Error()}
 
 		common.WriteResponse(response, w, http.StatusNotFound)
 		return
@@ -134,10 +132,10 @@ func UpdateCoupon(w http.ResponseWriter, r *http.Request) {
 
 	coupon.Type = updatedCoupon.Type
 	coupon.Details = updatedCoupon.Details
-	result = db.DB.Save(&coupon)
-	if result.Error != nil {
-		log.Error().Msgf("%s", result.Error.Error())
-		response := common.DataResponse{Message: result.Error.Error()}
+	updatedCoupon, err = ch.DBClient.UpdateCoupon(couponID, coupon)
+	if err != nil {
+		log.Error().Msgf("%s", err.Error())
+		response := common.DataResponse{Message: err.Error()}
 
 		common.WriteResponse(response, w, http.StatusInternalServerError)
 		return
@@ -145,13 +143,13 @@ func UpdateCoupon(w http.ResponseWriter, r *http.Request) {
 
 	response := common.DataResponse{
 		Message: "Updated coupon successfully",
-		Data:    coupon,
+		Data:    *updatedCoupon,
 	}
 
 	common.WriteResponse(response, w, http.StatusOK)
 }
 
-func DeleteCoupon(w http.ResponseWriter, r *http.Request) {
+func (ch *CouponsHandler) DeleteCoupon(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("DeleteCoupon called")
 
@@ -167,10 +165,10 @@ func DeleteCoupon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := db.DB.Delete(&models.Coupon{}, couponId)
-	if result.Error != nil {
-		log.Error().Msgf("%s", result.Error.Error())
-		response := common.DataResponse{Message: result.Error.Error()}
+	err = ch.DBClient.DeleteCoupon(couponId)
+	if err != nil {
+		log.Error().Msgf("%s", err.Error())
+		response := common.DataResponse{Message: err.Error()}
 
 		common.WriteResponse(response, w, http.StatusNotFound)
 		return
@@ -178,7 +176,6 @@ func DeleteCoupon(w http.ResponseWriter, r *http.Request) {
 
 	response := common.DataResponse{
 		Message: "Deleted coupon",
-		Data:    models.Coupon{},
 	}
 
 	common.WriteResponse(response, w, http.StatusOK)

@@ -6,13 +6,12 @@ import (
 	"strconv"
 
 	"github.com/Snehashish1609/couponverse-api/common"
-	"github.com/Snehashish1609/couponverse-api/db"
 	"github.com/Snehashish1609/couponverse-api/models"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
 
-func GetApplicableCoupons(w http.ResponseWriter, r *http.Request) {
+func (ch *CouponsHandler) GetApplicableCoupons(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("GetApplicableCoupons called")
 
@@ -28,15 +27,15 @@ func GetApplicableCoupons(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	var coupons []models.Coupon
-	if err := db.DB.Find(&coupons).Error; err != nil {
+	allCoupons, err := ch.DBClient.GetAllCoupons()
+	if err != nil {
 		http.Error(w, "Could not retrieve coupons", http.StatusInternalServerError)
 		return
 	}
 
 	applicableCoupons := []common.ApplicableCouponResponse{}
 
-	for _, coupon := range coupons {
+	for _, coupon := range allCoupons {
 		var discount float64
 		switch coupon.Type {
 		case models.CartWise:
@@ -158,7 +157,7 @@ func calculateBxGyDiscount(coupon models.Coupon, cart models.Cart) float64 {
 	return discount
 }
 
-func ApplyCoupon(w http.ResponseWriter, r *http.Request) {
+func (ch *CouponsHandler) ApplyCoupon(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("ApplyCoupon called")
 
@@ -168,8 +167,8 @@ func ApplyCoupon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var coupon models.Coupon
-	if err := db.DB.First(&coupon, couponID).Error; err != nil {
+	coupon, err := ch.DBClient.GetCouponById(couponID)
+	if err != nil {
 		http.Error(w, "Coupon not found", http.StatusNotFound)
 		return
 	}
@@ -184,11 +183,11 @@ func ApplyCoupon(w http.ResponseWriter, r *http.Request) {
 	var discount float64
 	switch coupon.Type {
 	case models.CartWise:
-		discount = calculateCartWiseDiscount(coupon, applyCouponsRequest.Cart)
+		discount = calculateCartWiseDiscount(*coupon, applyCouponsRequest.Cart)
 	case models.ProductWise:
-		discount = calculateProductWiseDiscount(coupon, applyCouponsRequest.Cart)
+		discount = calculateProductWiseDiscount(*coupon, applyCouponsRequest.Cart)
 	case models.BxGy:
-		discount = calculateBxGyDiscount(coupon, applyCouponsRequest.Cart)
+		discount = calculateBxGyDiscount(*coupon, applyCouponsRequest.Cart)
 	}
 
 	totalCartValue := 0.0

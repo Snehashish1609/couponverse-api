@@ -8,8 +8,6 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var DB *gorm.DB
-
 func Conn(connString string) (*gorm.DB, error) {
 	log.Debug().Msg("Function Conn called")
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{
