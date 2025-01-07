@@ -55,9 +55,11 @@ func (ch *CouponsHandler) GetApplicableCoupons(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	// can be separated out
+	response := map[string]interface{}{
 		"applicable_coupons": applicableCoupons,
-	})
+	}
+	common.WriteResponse(response, w, http.StatusOK)
 }
 
 func calculateCartWiseDiscount(coupon models.Coupon, cart models.Cart) float64 {
@@ -195,10 +197,11 @@ func (ch *CouponsHandler) ApplyCoupon(w http.ResponseWriter, r *http.Request) {
 		totalCartValue += float64(item.Quantity) * item.Price
 	}
 
+	// can be separated out
 	response := map[string]interface{}{
 		"updated_cart":   applyCouponsRequest.Cart,
 		"total_discount": discount,
 		"final_price":    totalCartValue - discount,
 	}
-	json.NewEncoder(w).Encode(response)
+	common.WriteResponse(response, w, http.StatusAccepted)
 }

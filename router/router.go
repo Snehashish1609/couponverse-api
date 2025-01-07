@@ -9,8 +9,7 @@ func CreateRouter(ch *v1.CouponsHandler) (*mux.Router, error) {
 	r := mux.NewRouter()
 
 	// routes
-	r.HandleFunc("/", ch.HomeHandler)
-	r.HandleFunc("/api/v1/user/{user_id}", ch.GetUserHandler).Methods("GET")
+	r.HandleFunc("/", ch.HomeHandler) // blocked for now
 	r.HandleFunc("/coupons", ch.CreateCoupon).Methods("POST")
 	r.HandleFunc("/coupons/{id}", ch.GetCoupon).Methods("GET")
 	r.HandleFunc("/coupons", ch.GetAllCoupons).Methods("GET")

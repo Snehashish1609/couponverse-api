@@ -2,12 +2,9 @@ package v1
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/Snehashish1609/couponverse-api/common"
 	"github.com/Snehashish1609/couponverse-api/db/coupon"
-	"github.com/Snehashish1609/couponverse-api/models"
-	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
 
@@ -21,17 +18,6 @@ func NewCouponsHandler(client coupon.Client) *CouponsHandler {
 	}
 }
 
-func (ch *CouponsHandler) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	log.Info().
-		Msg("GetUserHandler called")
-
-	vars := mux.Vars(r)
-	userId, _ := strconv.Atoi(vars["user_id"])
-
-	response := getDummyUser(userId)
-	common.WriteResponse(response, w, http.StatusOK)
-}
-
 func (ch *CouponsHandler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Msg("handling home")
@@ -42,13 +28,4 @@ func (ch *CouponsHandler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.WriteResponse(response, w, http.StatusBadRequest)
-}
-
-func getDummyUser(id int) models.User {
-	return models.User{
-		UserID:    id,
-		FirstName: "foo",
-		LastName:  "bar",
-		Age:       100,
-	}
 }
